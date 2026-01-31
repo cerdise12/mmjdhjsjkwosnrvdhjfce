@@ -72,9 +72,9 @@ def callback_handler(call):
     user_id = call.from_user.id
     data = call.data
     
-    # Подтверждаем получение callback
+    # Подтверждаем получение callback сразу
     try:
-        bot.answer_callback_query(call.id)
+        bot.answer_callback_query(call.id, cache_time=1)
     except:
         pass
     
@@ -265,10 +265,35 @@ def callback_handler(call):
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             status_text = "Онлайн" if new_status else "Оффлайн"
             bot.answer_callback_query(call.id, f"{account_name} теперь {status_text}")
+            
             kb = build_accounts_keyboard(user_id, callback_prefix="toggle", back_callback="functions")
-            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=kb)
+            try:
+                bot.edit_message_reply_markup(
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    reply_markup=kb
+                )
+            except:
+                # Если не удалось отредактировать, обновляем весь текст
+                try:
+                    bot.edit_message_text(
+                        chat_id=call.message.chat.id,
+                        message_id=call.message.message_id,
+                        text="🟢 Выберите аккаунт для переключения онлайн/оффлайн",
+                        reply_markup=kb
+                    )
+                except:
+                    # Если и это не работает, удаляем и отправляем новое
+                    try:
+                        bot.delete_message(call.message.chat.id, call.message.message_id)
+                    except:
+                        pass
+                    bot.send_message(call.message.chat.id, "🟢 Выберите аккаунт для переключения онлайн/оффлайн", reply_markup=kb)
         except Exception as e:
-            bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
+            try:
+                bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
+            except:
+                pass
         return
     
     # Возврат/ЧС меню
@@ -300,17 +325,14 @@ def callback_handler(call):
             
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             
-            if settings:
-                status = "✅ Включено" if settings.get('enabled', False) else "❌ Выключено"
-                text = f"⚙ Настройки Возврат/ЧС для {account_name}\n\n"
-                text += f"Статус: {status}\n"
-                text += f"Сумма: {settings.get('sum', 0)}\n"
-                text += f"Валюта: {settings.get('currency', 'RUB')}\n"
-                text += f"Звезды: {settings.get('stars', 0)}\n"
-                text += f"Макс. возвратов: {settings.get('max_returns', 0)}\n"
-                text += f"Макс. процент: {settings.get('max_percent', 0)}%"
-            else:
-                text = "Ошибка загрузки настроек"
+            status = "✅ Включено" if settings.get('enabled', False) else "❌ Выключено"
+            text = f"⚙ Настройки Возврат/ЧС для {account_name}\n\n"
+            text += f"Статус: {status}\n"
+            text += f"Сумма: {settings.get('sum', 0)}\n"
+            text += f"Валюта: {settings.get('currency', 'RUB')}\n"
+            text += f"Звезды: {settings.get('stars', 0)}\n"
+            text += f"Макс. возвратов: {settings.get('max_returns', 0)}\n"
+            text += f"Макс. процент: {settings.get('max_percent', 0)}%"
             
             kb = types.InlineKeyboardMarkup(row_width=1)
             kb.add(
@@ -325,9 +347,26 @@ def callback_handler(call):
                 types.InlineKeyboardButton("📊 Макс. процент", callback_data=f"returns_percent_{idx}"),
                 types.InlineKeyboardButton("⬅ Назад", callback_data="returns_menu")
             )
-            bot.edit_message_text(call.message.chat.id, call.message.message_id, text, reply_markup=kb)
+            
+            try:
+                bot.edit_message_text(
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    text=text,
+                    reply_markup=kb
+                )
+            except:
+                # Если не удалось отредактировать, удаляем старое и отправляем новое
+                try:
+                    bot.delete_message(call.message.chat.id, call.message.message_id)
+                except:
+                    pass
+                bot.send_message(call.message.chat.id, text, reply_markup=kb)
         except Exception as e:
-            bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
+            try:
+                bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
+            except:
+                pass
         return
     
     # Переключение возврата
@@ -440,9 +479,26 @@ def callback_handler(call):
                 types.InlineKeyboardButton("📝 Список ключевых слов", callback_data=f"keywords_list_{idx}"),
                 types.InlineKeyboardButton("⬅ Назад", callback_data="keywords_menu")
             )
-            bot.edit_message_text(call.message.chat.id, call.message.message_id, text, reply_markup=kb)
+            
+            try:
+                bot.edit_message_text(
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    text=text,
+                    reply_markup=kb
+                )
+            except:
+                # Если не удалось отредактировать, удаляем старое и отправляем новое
+                try:
+                    bot.delete_message(call.message.chat.id, call.message.message_id)
+                except:
+                    pass
+                bot.send_message(call.message.chat.id, text, reply_markup=kb)
         except Exception as e:
-            bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
+            try:
+                bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
+            except:
+                pass
         return
     
     # Добавление ключевого слова
@@ -567,14 +623,11 @@ def callback_handler(call):
             
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             
-            if review_settings:
-                status = "✅ Включено" if review_settings.get('enabled', False) else "❌ Выключено"
-                response = review_settings.get('response_text', 'Не настроено')
-                text = f"⭐ Автоответ на отзыв для {account_name}\n\n"
-                text += f"Статус: {status}\n"
-                text += f"Ответ: {response[:100]}{'...' if len(response) > 100 else ''}"
-            else:
-                text = "Ошибка загрузки настроек"
+            status = "✅ Включено" if review_settings.get('enabled', False) else "❌ Выключено"
+            response = review_settings.get('response_text', 'Не настроено')
+            text = f"⭐ Автоответ на отзыв для {account_name}\n\n"
+            text += f"Статус: {status}\n"
+            text += f"Ответ: {response[:100]}{'...' if len(response) > 100 else ''}"
             
             kb = types.InlineKeyboardMarkup(row_width=1)
             kb.add(
@@ -585,7 +638,21 @@ def callback_handler(call):
                 types.InlineKeyboardButton("✏ Настроить ответ", callback_data=f"auto_review_set_{idx}"),
                 types.InlineKeyboardButton("⬅ Назад", callback_data="auto_review_menu")
             )
-            bot.edit_message_text(call.message.chat.id, call.message.message_id, text, reply_markup=kb)
+            
+            try:
+                bot.edit_message_text(
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    text=text,
+                    reply_markup=kb
+                )
+            except:
+                # Если не удалось отредактировать, удаляем старое и отправляем новое
+                try:
+                    bot.delete_message(call.message.chat.id, call.message.message_id)
+                except:
+                    pass
+                bot.send_message(call.message.chat.id, text, reply_markup=kb)
         except Exception as e:
             bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
         return
