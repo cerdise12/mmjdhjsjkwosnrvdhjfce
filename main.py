@@ -43,25 +43,63 @@ def callbacks(call):
         send_main_menu(call.message.chat.id, call.from_user.first_name, user_id)
 
     elif data == "help":
-        lang = user_lang.get(user_id, "ru")
-        bot.edit_message_text(call.message.chat.id, call.message.message_id, tr(HELP_TEXT.replace("$bot", bot.get_me().first_name), lang))
+        try:
+            lang = user_lang.get(user_id, "ru")
+            bot.edit_message_text(call.message.chat.id, call.message.message_id, tr(HELP_TEXT.replace("$bot", bot.get_me().first_name), lang))
+            bot.answer_callback_query(call.id)
+        except Exception as e:
+            lang = user_lang.get(user_id, "ru")
+            bot.send_message(call.message.chat.id, tr(HELP_TEXT.replace("$bot", bot.get_me().first_name), lang))
+            bot.answer_callback_query(call.id)
 
     elif data == "support":
         bot.send_message(call.message.chat.id,
                          "Здравствуйте, наш менеджер @ilaAkbar67. Напишите ему по любым вопросам.\n"
                          "Обязательная подписка на канал: @alphafunpay")
+        bot.answer_callback_query(call.id)
 
     elif data == "control":
-        kb = types.InlineKeyboardMarkup(row_width=1)
-        kb.add(
-            types.InlineKeyboardButton("➕ Добавить аккаунт", callback_data="add_account"),
-            types.InlineKeyboardButton("🔧 Функции", callback_data="functions"),
-            types.InlineKeyboardButton("⬅ Назад", callback_data="back_main")
-        )
-        bot.edit_message_text(call.message.chat.id, call.message.message_id, "⚙ Меню управления", reply_markup=kb)
+        try:
+            kb = types.InlineKeyboardMarkup(row_width=1)
+            kb.add(
+                types.InlineKeyboardButton("➕ Добавить аккаунт", callback_data="add_account"),
+                types.InlineKeyboardButton("🔧 Функции", callback_data="functions"),
+                types.InlineKeyboardButton("⬅ Назад", callback_data="back_main")
+            )
+            bot.edit_message_text(call.message.chat.id, call.message.message_id, "⚙ Меню управления", reply_markup=kb)
+            bot.answer_callback_query(call.id)
+        except Exception as e:
+            # Если не удалось отредактировать сообщение, отправляем новое
+            kb = types.InlineKeyboardMarkup(row_width=1)
+            kb.add(
+                types.InlineKeyboardButton("➕ Добавить аккаунт", callback_data="add_account"),
+                types.InlineKeyboardButton("🔧 Функции", callback_data="functions"),
+                types.InlineKeyboardButton("⬅ Назад", callback_data="back_main")
+            )
+            bot.send_message(call.message.chat.id, "⚙ Меню управления", reply_markup=kb)
+            bot.answer_callback_query(call.id)
 
     elif data == "back_main":
-        send_main_menu(call.message.chat.id, call.from_user.first_name, user_id)
+        try:
+            kb = types.InlineKeyboardMarkup(row_width=2)
+            kb.add(
+                types.InlineKeyboardButton("👤 Подписка", callback_data="sub"),
+                types.InlineKeyboardButton("⚙ Управление", callback_data="control"),
+                types.InlineKeyboardButton("❓ Помощь", callback_data="help"),
+                types.InlineKeyboardButton("🛠 Техподдержка", callback_data="support"),
+                types.InlineKeyboardButton("🌐 Язык", callback_data="change_lang")
+            )
+            lang = user_lang.get(user_id, "ru")
+            bot.edit_message_text(
+                call.message.chat.id, 
+                call.message.message_id, 
+                tr(MENU_TEXT.format(user=call.from_user.first_name), lang), 
+                reply_markup=kb
+            )
+            bot.answer_callback_query(call.id)
+        except Exception as e:
+            send_main_menu(call.message.chat.id, call.from_user.first_name, user_id)
+            bot.answer_callback_query(call.id)
 
     elif data == "add_account":
         msg = bot.send_message(call.message.chat.id, "Пришлите ваш golden_key для подключения FunPay")
