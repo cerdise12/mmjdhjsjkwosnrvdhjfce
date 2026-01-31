@@ -237,27 +237,35 @@ def callback_handler(call):
     
     # Онлайн/Оффлайн меню
     if data == "toggle_online_menu":
-        kb = build_accounts_keyboard(user_id, callback_prefix="toggle")
+        kb = build_accounts_keyboard(user_id, callback_prefix="toggle", back_callback="functions")
         try:
             bot.edit_message_text(
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
-                text="Выберите аккаунт для переключения онлайн/оффлайн",
+                text="🟢 Выберите аккаунт для переключения онлайн/оффлайн",
                 reply_markup=kb
             )
         except:
-            bot.send_message(call.message.chat.id, "Выберите аккаунт для переключения онлайн/оффлайн", reply_markup=kb)
+            bot.send_message(call.message.chat.id, "🟢 Выберите аккаунт для переключения онлайн/оффлайн", reply_markup=kb)
         return
     
     # Переключение онлайн/оффлайн
     if data.startswith("toggle_"):
         try:
             idx = int(data.split("_")[-1])
+            if user_id not in user_sessions or idx >= len(user_sessions[user_id]['accounts']):
+                bot.answer_callback_query(call.id, "Ошибка: аккаунт не найден", show_alert=True)
+                return
+            
             new_status = toggle_online(user_id, idx)
+            if new_status is False:
+                bot.answer_callback_query(call.id, "Ошибка переключения", show_alert=True)
+                return
+            
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             status_text = "Онлайн" if new_status else "Оффлайн"
             bot.answer_callback_query(call.id, f"{account_name} теперь {status_text}")
-            kb = build_accounts_keyboard(user_id, callback_prefix="toggle")
+            kb = build_accounts_keyboard(user_id, callback_prefix="toggle", back_callback="functions")
             bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=kb)
         except Exception as e:
             bot.answer_callback_query(call.id, f"Ошибка: {str(e)}", show_alert=True)
@@ -265,7 +273,7 @@ def callback_handler(call):
     
     # Возврат/ЧС меню
     if data == "returns_menu":
-        kb = build_accounts_keyboard(user_id, callback_prefix="returns_acc")
+        kb = build_accounts_keyboard(user_id, callback_prefix="returns_acc", back_callback="functions")
         try:
             bot.edit_message_text(
                 chat_id=call.message.chat.id,
@@ -281,7 +289,15 @@ def callback_handler(call):
     if data.startswith("returns_acc_"):
         try:
             idx = int(data.split("_")[-1])
+            if user_id not in user_sessions or idx >= len(user_sessions[user_id]['accounts']):
+                bot.answer_callback_query(call.id, "Ошибка: аккаунт не найден", show_alert=True)
+                return
+            
             settings = get_return_settings(user_id, idx)
+            if settings is None:
+                bot.answer_callback_query(call.id, "Ошибка загрузки настроек", show_alert=True)
+                return
+            
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             
             if settings:
@@ -387,7 +403,7 @@ def callback_handler(call):
     
     # Ключевые слова меню
     if data == "keywords_menu":
-        kb = build_accounts_keyboard(user_id, callback_prefix="keywords_acc")
+        kb = build_accounts_keyboard(user_id, callback_prefix="keywords_acc", back_callback="functions")
         try:
             bot.edit_message_text(
                 chat_id=call.message.chat.id,
@@ -403,6 +419,10 @@ def callback_handler(call):
     if data.startswith("keywords_acc_"):
         try:
             idx = int(data.split("_")[-1])
+            if user_id not in user_sessions or idx >= len(user_sessions[user_id]['accounts']):
+                bot.answer_callback_query(call.id, "Ошибка: аккаунт не найден", show_alert=True)
+                return
+            
             keywords = get_keywords(user_id, idx)
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             text = f"💬 Ключевые слова для {account_name}\n\n"
@@ -520,7 +540,7 @@ def callback_handler(call):
     
     # Автоответ на отзыв меню
     if data == "auto_review_menu":
-        kb = build_accounts_keyboard(user_id, callback_prefix="auto_review_acc")
+        kb = build_accounts_keyboard(user_id, callback_prefix="auto_review_acc", back_callback="functions")
         try:
             bot.edit_message_text(
                 chat_id=call.message.chat.id,
@@ -536,7 +556,15 @@ def callback_handler(call):
     if data.startswith("auto_review_acc_"):
         try:
             idx = int(data.split("_")[-1])
+            if user_id not in user_sessions or idx >= len(user_sessions[user_id]['accounts']):
+                bot.answer_callback_query(call.id, "Ошибка: аккаунт не найден", show_alert=True)
+                return
+            
             review_settings = get_auto_review_response(user_id, idx)
+            if review_settings is None:
+                bot.answer_callback_query(call.id, "Ошибка загрузки настроек", show_alert=True)
+                return
+            
             account_name = user_sessions[user_id]['accounts'][idx]['name']
             
             if review_settings:
