@@ -1,5 +1,3 @@
-from deep_translator import GoogleTranslator
-
 BOT_TOKEN = "8396306941:AAEuwWU9i2qe9fr_QYC9lj43ESVEa2x3He4"
 CHANNEL_ID = "@alphafunpay"
 CHANNEL_URL = "https://t.me/alphafunpay"
@@ -34,6 +32,5 @@ HELP_TEXT = (
 )
 
 def tr(text, lang):
-    if lang == "ru":
-        return text
-    return GoogleTranslator(source="ru", target="en").translate(text)
+    # Всегда возвращаем русский текст, независимо от выбранного языка
+    return text
